@@ -21,7 +21,7 @@ class QueryManager:
 
     def list_queries(self) -> Dict[str, str]:
         """Lists all available queries."""
-        queries = self.load_queries()
+        queries = self.load_queries()["queries"]
         # logging.info(f"Available queries: {list(queries.keys())}")
         return queries
 
