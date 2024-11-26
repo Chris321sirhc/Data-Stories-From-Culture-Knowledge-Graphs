@@ -1,9 +1,13 @@
+from genericpath import exists
 import logging
 from typing import List, Dict, Optional
 from os import listdir
 from os.path import isfile, join
+import pandas as pd
+import json
 from pathlib import Path
-
+import os
+from datetime import datetime
 
 def list_dir_files(directory: str) -> List[str]:
     """
@@ -164,3 +168,65 @@ def display_sorted_results(results: List[Dict], key: str, count_key: str) -> Non
     logging.info("Displaying sorted results.")
     sorted_results = sort_results(results, count_key)
     display_results(sorted_results, key, count_key)
+
+def export_results_to_csv(results: List[Dict], filename: str):
+    """
+    Exports SPARQL query results to a CSV file.
+
+    Args:
+        results (List[Dict]): The query results to export.
+        filename (str): The output file name.
+    """
+    if not filename.endswith(".csv"):
+        filename += ".csv"
+    try:
+        df = pd.json_normalize(results)
+        df.to_csv(filename, index=False)
+        logging.info(f"Results exported to {filename}")
+    except Exception as e:
+        logging.error(f"Error exporting results to CSV: {e}")
+
+
+def export_results_to_json(results: List[Dict], filename: str = "") -> None:
+    """
+    Exports SPARQL query results to a JSON file.
+
+    Args:
+        results (List[Dict]): The query results to export.
+        filename (str): The output file name. Defaults to an auto-generated name if not provided.
+    """
+    if not filename:
+        filename = f"{get_dir('files/results/')}/results_{get_timestamp()}.json"
+    elif not filename.endswith(".json"):
+        filename += ".json"
+
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            json.dump(results, file, indent=4)
+        logging.info(f"Results exported to {filename}")
+    except Exception as e:
+        logging.error(f"Error exporting results to JSON: {e}")
+        raise
+
+def get_timestamp() -> str:
+    """
+    Returns the current timestamp in a formatted string.
+
+    Returns:
+        str: The current timestamp in 'YYYY-MM-DD_HH-MM-SS' format.
+    """
+    return datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+def get_dir(path: str) -> Path:
+    """
+    Ensures a directory exists and returns its absolute Path.
+
+    Args:
+        path (str): The directory path.
+
+    Returns:
+        Path: The resolved directory path.
+    """
+    if not os.path.exists(path):
+        os.makedirs(path, exist_ok=True)
+    return Path(path).resolve()
