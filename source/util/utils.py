@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import os
 from datetime import datetime
+from urllib.parse import urlparse
 
 def list_dir_files(directory: str) -> List[str]:
     """
@@ -76,6 +77,15 @@ def list_and_select_query(queries: Dict[str, str]) -> str:
     return select_from_list(options, "Select a query by number: ")
 
 
+def extract_relevant(uri: str) -> str:
+    parsed = urlparse(uri)
+    # Extract domain, path, and fragment
+    domain = parsed.netloc.split(".")[-2:]  # Last two parts of domain
+    domain = ".".join(domain)
+    path = "/".join(parsed.path.strip("/").split("/")[-2:])  # Last two path parts
+    fragment = parsed.fragment  # Fragment after #
+    return f"{domain} | {path} | {fragment}" if fragment else f"{domain} | {path}"
+
 def display_results(results: List[Dict], key: str, count_key: str) -> None:
     """
     Displays results in a readable format.
@@ -87,10 +97,16 @@ def display_results(results: List[Dict], key: str, count_key: str) -> None:
     """
     logging.info("Displaying results.")
     for i, result in enumerate(results, start=1):
-        print(
-            f"{i}: {key.capitalize()}: {result[key]['value']}, Count: {result[count_key]['value']}"
+        # print(
+        #     # f"{i}: {key.capitalize()}: {result[key]['value'].stem if type(result[key]['value']) == Path else result[key]['value']}, Count: {result[count_key]['value']}"
+        #     f"{i}: {key.capitalize()}: {result[key]['value']}, Count: {result[count_key]['value']}"
+        # )
+        formatted_string = (
+            f"{i:<3} | {key.capitalize():<15} | "
+            f"Type: {extract_relevant(result[key]['value']):<50} | "
+            f"Count: {result[count_key]['value']:>10}"
         )
-
+        print(formatted_string)
 
 def get_user_selection(results: List[Dict], key: str) -> Optional[str]:
     """
